@@ -2,7 +2,7 @@
 A game made in Python 3.7.7 using the Pygame library.  
   
 ## Status
-Under development.
+Very early stages of development.
   
 ## Controls
 <kbd>←</kbd> left  
