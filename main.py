@@ -20,8 +20,10 @@ class Player:
         self.cells = list([(index % cols * w, index // cols * h, w, h) for index in range(cols)])
         self.idle = [self.cells[0], self.cells[1], self.cells[2], self.cells[3]]
         self.move = [self.cells[4], self.cells[5], self.cells[6], self.cells[7], self.cells[8], self.cells[9]]
+        self.sprint = [self.cells[17], self.cells[18], self.cells[19], self.cells[20], self.cells[21], self.cells[22], self.cells[23]]
         self.idle_left = [self.cells[23], self.cells[22], self.cells[21], self.cells[20]]
         self.move_left = [self.cells[19], self.cells[18], self.cells[17], self.cells[16], self.cells[15], self.cells[14]]
+        self.sprint_left = [self.cells[6], self.cells[5], self.cells[4], self.cells[3], self.cells[2], self.cells[1], self.cells[0]]
         self.handle = list([(0,0), (-hw, 0), (-w, 0), (0, -hh), (-hw, -hh), (-w, -hh), (0, -h),
             (-hw, -h), (-w, -h)])
 
@@ -30,6 +32,9 @@ class Player:
 
     def draw_move(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet, (x + self.handle[handle][0], y + self.handle[handle][1]), self.move[cellIndex])
+    
+    def draw_sprint(self, surface, cellIndex, x, y, handle = 0):
+        surface.blit(self.sheet, (x + self.handle[handle][0], y + self.handle[handle][1]), self.sprint[cellIndex])
 
     def draw_idle_left(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet2, (x + self.handle[handle][0], y + self.handle[handle][1]), self.idle_left[cellIndex])
@@ -37,31 +42,52 @@ class Player:
     def draw_move_left(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet2, (x + self.handle[handle][0], y + self.handle[handle][1]), self.move_left[cellIndex])
 
+    def draw_sprint_left(self, surface, cellIndex, x, y, handle = 0):
+        surface.blit(self.sheet2, (x + self.handle[handle][0], y + self.handle[handle][1]), self.sprint_left[cellIndex])
+
 walkCount = 0
+sprintCount = 0
+nextSprint = time.time()
 nextWalk = time.time()
 
-def redrawGameWindow(screen, background, player, playerPos, frame, right, left, idle, prev):
+def redrawGameWindow(screen, background, player, playerPos, frame, right, left, idle, prev, sprint):
     global walkCount
     global nextWalk
+    global sprintCount
+    global nextSprint
 
     screen.blit(background, (0,0))  # This will draw our background image at (0,0)
 
     if right:
-        player.draw_move(screen, walkCount, playerPos[0], playerPos[1], 4)
-        if time.time() > nextWalk:
-            walkCount = (walkCount + 1) % 6
-            nextWalk = time.time() + 0.08
+        if sprint:
+            player.draw_sprint(screen, sprintCount, playerPos[0], playerPos[1], 4)
+            if time.time() > nextSprint:
+                sprintCount = (sprintCount + 1) % 7
+                nextSprint = time.time() + 0.04
+        else:
+            player.draw_move(screen, walkCount, playerPos[0], playerPos[1], 4)
+            if time.time() > nextWalk:
+                walkCount = (walkCount + 1) % 6
+                nextWalk = time.time() + 0.08
     elif left:
-        player.draw_move_left(screen, walkCount, playerPos[0], playerPos[1], 4)
-        if time.time() > nextWalk:
-            walkCount = (walkCount + 1) % 6
-            nextWalk = time.time() + 0.08
+        if sprint:
+            player.draw_sprint_left(screen, sprintCount, playerPos[0], playerPos[1], 4)
+            if time.time() > nextSprint:
+                sprintCount = (sprintCount + 1) % 7
+                nextSprint = time.time() + 0.04
+        else:
+            player.draw_move_left(screen, walkCount, playerPos[0], playerPos[1], 4)
+            if time.time() > nextWalk:
+                walkCount = (walkCount + 1) % 6
+                nextWalk = time.time() + 0.08
     elif idle and prev == "RIGHT":
         player.draw_idle(screen, frame, playerPos[0], playerPos[1], 4)
         walkCount = 0
+        sprintcount = 0
     elif idle and prev == "LEFT":
         player.draw_idle_left(screen, frame, playerPos[0], playerPos[1], 4)
         walkCount = 0
+        sprintCount = 0
 
     pygame.display.update()
 
@@ -93,6 +119,7 @@ def main():
     left = False
     prev = "RIGHT"
     idle = True
+    sprint = False
 
     # Event loop
     while 1:
@@ -102,19 +129,39 @@ def main():
 
         keys=pygame.key.get_pressed()
         if keys[K_RIGHT]:
-            playerPos[0] += 0.75
-            if playerPos[0] > 820:
-                playerPos[0] = 0
-            right = True
-            left = False
-            idle = False
+            if keys[K_LSHIFT]:
+                playerPos[0] += 1.2
+                if playerPos[0] > 810:
+                    playerPos[0] = 0
+                right = True
+                left = False
+                idle = False
+                sprint = True
+            else:
+                playerPos[0] += 0.75
+                if playerPos[0] > 820:
+                    playerPos[0] = 0
+                right = True
+                left = False
+                idle = False
+                sprint = False
         elif keys[K_LEFT]:
-            if playerPos[0] < -20:
-                playerPos[0] = 800
-            playerPos[0] -= 0.75
-            left = True
-            right = False
-            idle = False
+            if keys[K_LSHIFT]:
+                playerPos[0] -= 1.2
+                if playerPos[0] < -10:
+                    playerPos[0] = 800
+                right = False
+                left = True
+                idle = False
+                sprint = True
+            else:
+                playerPos[0] -= 0.75
+                if playerPos[0] < -20:
+                    playerPos[0] = 800
+                left = True
+                right = False
+                idle = False
+                sprint = False
         else:
             if right == True:
                 prev = "RIGHT"
@@ -123,7 +170,9 @@ def main():
             right = False
             left = False
             idle = True
+            sprint = False
             walkCount = 0
+            sprintCount = 0
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -133,7 +182,7 @@ def main():
             frame = (frame + 1) % 4
             nextFrame = time.time() + 0.25
 
-        redrawGameWindow(screen, background, player, playerPos, frame, right, left, idle, prev)
+        redrawGameWindow(screen, background, player, playerPos, frame, right, left, idle, prev, sprint)
 
 if __name__ == '__main__':
     main()
