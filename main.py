@@ -5,18 +5,22 @@ import time
 
 class Player:
     def __init__(self, filename, filename2, cols):
+
+        # Load sprites
         self.sheet = pygame.image.load(filename)
         self.sheet2 = pygame.image.load(filename2)
 
         self.cols = cols
         self.rows = 1
 
+        # Parse sprites
         self.rect = self.sheet.get_rect()
         self.rect2 = self.sheet2.get_rect()
         w = self.cellWidth = self.rect.width / cols
         h = self.cellHeight = self.rect.height / self.rows
         hw, hh = self.cellCenter = (w / 2, h / 2)
 
+        # Define animations sprites 
         self.cells = list([(index % cols * w, index // cols * h, w, h) for index in range(cols)])
         self.idle = [self.cells[0], self.cells[1], self.cells[2], self.cells[3]]
         self.move = [self.cells[4], self.cells[5], self.cells[6], self.cells[7], self.cells[8], self.cells[9]]
@@ -27,21 +31,27 @@ class Player:
         self.handle = list([(0,0), (-hw, 0), (-w, 0), (0, -hh), (-hw, -hh), (-w, -hh), (0, -h),
             (-hw, -h), (-w, -h)])
 
+    # Idle facing right animation
     def draw_idle(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet, (x + self.handle[handle][0], y + self.handle[handle][1]), self.idle[cellIndex])
 
+    # Moving right animation
     def draw_move(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet, (x + self.handle[handle][0], y + self.handle[handle][1]), self.move[cellIndex])
     
+    # Sprinting right animation
     def draw_sprint(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet, (x + self.handle[handle][0], y + self.handle[handle][1]), self.sprint[cellIndex])
 
+    # Idle facing left animation
     def draw_idle_left(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet2, (x + self.handle[handle][0], y + self.handle[handle][1]), self.idle_left[cellIndex])
 
+    # Moving left animation
     def draw_move_left(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet2, (x + self.handle[handle][0], y + self.handle[handle][1]), self.move_left[cellIndex])
 
+    # Sprinting left animation
     def draw_sprint_left(self, surface, cellIndex, x, y, handle = 0):
         surface.blit(self.sheet2, (x + self.handle[handle][0], y + self.handle[handle][1]), self.sprint_left[cellIndex])
 
@@ -58,32 +68,40 @@ def redrawGameWindow(screen, background, player, playerPos, frame, right, left, 
 
     screen.blit(background, (0,0))  # This will draw our background image at (0,0)
 
+    # Moving right
     if right:
         if sprint:
             player.draw_sprint(screen, sprintCount, playerPos[0], playerPos[1], 4)
+            # Adjust how fast the sprint sprites animate
             if time.time() > nextSprint:
                 sprintCount = (sprintCount + 1) % 7
                 nextSprint = time.time() + 0.04
         else:
             player.draw_move(screen, walkCount, playerPos[0], playerPos[1], 4)
+            # Adjust how fast the walking sprites animate
             if time.time() > nextWalk:
                 walkCount = (walkCount + 1) % 6
                 nextWalk = time.time() + 0.08
+    # Moving left
     elif left:
         if sprint:
             player.draw_sprint_left(screen, sprintCount, playerPos[0], playerPos[1], 4)
+            # Adjust how fast the sprint sprites animate
             if time.time() > nextSprint:
                 sprintCount = (sprintCount + 1) % 7
                 nextSprint = time.time() + 0.04
         else:
             player.draw_move_left(screen, walkCount, playerPos[0], playerPos[1], 4)
+            # Adjust how fast the walking sprites animate
             if time.time() > nextWalk:
                 walkCount = (walkCount + 1) % 6
                 nextWalk = time.time() + 0.08
+    # Idle right face after moving right
     elif idle and prev == "RIGHT":
         player.draw_idle(screen, frame, playerPos[0], playerPos[1], 4)
         walkCount = 0
         sprintcount = 0
+    # Idle left face after moving left
     elif idle and prev == "LEFT":
         player.draw_idle_left(screen, frame, playerPos[0], playerPos[1], 4)
         walkCount = 0
@@ -127,7 +145,7 @@ def main():
         # FPS
         clock.tick(FPS)
 
-        keys=pygame.key.get_pressed()
+        keys= pygame.key.get_pressed()
         if keys[K_RIGHT]:
             if keys[K_LSHIFT]:
                 playerPos[0] += 1.2
